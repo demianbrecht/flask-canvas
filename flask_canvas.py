@@ -6,19 +6,29 @@ try:
     from simplejson import loads
 except ImportError:
     from json import loads
+from urllib2 import urlopen
 
-from flask import abort, current_app as app, g, request
+from flask import abort, current_app as app, g, request as frequest
+
+def install(app):
+    app.before_request(_before_request)
+
+def request(path, data=None):
+    return loads(urlopen('%s%s?access_token=%s' % (
+        'https://graph.facebook.com',
+        path,
+        g.canvas_user['oauth_token'])).read(), data)
 
 def _decode(data):
     data += "=" * (len(data) % 4)
     return b64decode(data.encode('utf-8'))
 
 def _before_request():
-    if 'signed_request' not in request.form:
+    if 'signed_request' not in frequest.form:
         app.logger.error('signed_request not in request.form')
         abort(403)
 
-    encoded_sig, encoded_data = request.form['signed_request'].split('.')
+    encoded_sig, encoded_data = frequest.form['signed_request'].split('.')
     decoded_sig = _decode(encoded_sig)
     decoded_data = loads(_decode(encoded_data))
 
@@ -36,6 +46,3 @@ def _before_request():
             app.config['CANVAS_SCOPE'])
 
     g.canvas_user = decoded_data
-
-def install(app):
-    app.before_request(_before_request)

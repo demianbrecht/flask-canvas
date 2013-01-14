@@ -23,7 +23,9 @@ flask_canvas.install(app)
 
 @app.route('/canvas/', methods=['POST'])
 def canvas():
-    return dumps(g.canvas_user)
+    return '<p>%s</p><p>%s</p>' % (
+        dumps(g.canvas_user),
+        dumps(flask_canvas.request('/me')))
 
 if __name__ == '__main__':
     app.run()
