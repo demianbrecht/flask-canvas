@@ -3,7 +3,7 @@
 import hmac
 
 from base64 import urlsafe_b64decode as b64decode
-from hashlib import sha256
+from hashlib import sha256 # pylint: disable=E0611
 try:
     from simplejson import loads
 except ImportError:
@@ -12,7 +12,7 @@ from urllib2 import urlopen
 
 from flask import abort, current_app as app, g, request as flask_request
 
-def install(app):
+def install(app): # pylint: disable=W0621
     """ Installs the extension
 
     :param app: The ``Flask`` app to apply the extension to.
@@ -30,10 +30,12 @@ def request(path, data=None):
         path,
         g.canvas_user['oauth_token'])).read(), data)
 
-def canvas_endpoint(fn):
-    setattr(fn, '_canvas', True)
+def canvas_route(view_fn):
+    """ Decorator for canvas route 
+    """
+    setattr(view_fn, '_canvas', True)
 
-def _has_authorized(app):
+def _has_authorized():
     """ Check current user permission set
 
     Checks the current user permission set against the one being requested
@@ -69,8 +71,9 @@ def _authorize():
         app.config['CANVAS_REDIRECT_URI'], 
         app.config['CANVAS_SCOPE'],)
 
-def _decode_signed_user(payload):
-    encoded_sig, encoded_data = flask_request.form['signed_request'].split('.')
+def _decode_signed_user(encoded_sig, encoded_data):
+    """ Decodes the ``POST``ed signed data
+    """
     decoded_sig = _decode(encoded_sig)
     decoded_data = loads(_decode(encoded_data))
 
@@ -90,7 +93,8 @@ def _before_request():
     """
 
     try:
-        if not app.view_functions[flask_request.endpoint]._canvas:
+        if not app.view_functions[ #pylint: disable=W0212
+                flask_request.endpoint]._canvas: 
             return
     except (KeyError, AttributeError):
         # either we're handling a non-view request (i.e. static files, or the
@@ -102,9 +106,9 @@ def _before_request():
         abort(403)
 
     try:
-        decoded_sig, decoded_data = _decode_signed_user(
-            flask_request.form['signed_request'].split('.'))
-    except ValueError as e:
+        _, decoded_data = _decode_signed_user(
+            *flask_request.form['signed_request'].split('.'))
+    except ValueError as e: # pylint: disable=C0103
         app.logger.error(e.message)
         abort(403)
 
@@ -114,7 +118,7 @@ def _before_request():
 
     g.canvas_user = decoded_data
     if not app.config.get('CANVAS_SKIP_AUTH_CHECK',
-        False) and not _has_authorized(app):
+        False) and not _has_authorized():
         app.logger.info(
             'user does not have the required permission set. redirecting.')
         return _authorize()

@@ -9,7 +9,7 @@ try:
 except:
     from json import dumps
 
-from flask_canvas import canvas_endpoint, install, request
+from flask_canvas import canvas_route, install, request
 
 app = Flask('canvas_example')
 app.config.update({
@@ -25,7 +25,7 @@ install(app)
 def home():
     return 'hallo'
 
-@canvas_endpoint
+@canvas_route
 @app.route('/canvas/', methods=['POST'])
 def canvas():
     return '<p>%s</p><p>%s</p>' % (
