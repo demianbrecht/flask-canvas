@@ -1,3 +1,5 @@
+""" Flask extension for Facebook canvas-based applications
+"""
 import hmac
 
 from base64 import urlsafe_b64decode as b64decode
@@ -8,7 +10,7 @@ except ImportError:
     from json import loads
 from urllib2 import urlopen
 
-from flask import abort, current_app as app, g, request as frequest
+from flask import abort, current_app as app, g, request as flask_request
 
 def install(app):
     """ Installs the extension
@@ -18,7 +20,7 @@ def install(app):
     app.before_request(_before_request)
 
 def request(path, data=None):
-    """ Facebook request utility
+    """ Convenience Facebook request function. 
 
     Utility function to request resources via the graph API, with the
     format expected by Facebook.
@@ -27,6 +29,9 @@ def request(path, data=None):
         'https://graph.facebook.com',
         path,
         g.canvas_user['oauth_token'])).read(), data)
+
+def canvas_endpoint(fn):
+    setattr(fn, '_canvas', True)
 
 def _has_authorized(app):
     """ Check current user permission set
@@ -60,8 +65,20 @@ def _authorize():
                 window.top.location = oauth;
             </script>
         </head>
-    </html>""" % (app.config['CANVAS_CLIENT_ID'], app.config[
-        'CANVAS_REDIRECT_URI'], app.config['CANVAS_SCOPE'],)
+    </html>""" % (app.config['CANVAS_CLIENT_ID'], 
+        app.config['CANVAS_REDIRECT_URI'], 
+        app.config['CANVAS_SCOPE'],)
+
+def _decode_signed_user(payload):
+    encoded_sig, encoded_data = flask_request.form['signed_request'].split('.')
+    decoded_sig = _decode(encoded_sig)
+    decoded_data = loads(_decode(encoded_data))
+
+    if decoded_sig != hmac.new(app.config['CANVAS_CLIENT_SECRET'], 
+        encoded_data, sha256).digest():
+        raise ValueError("sig doesn't match hash")
+
+    return decoded_sig, decoded_data
 
 def _before_request():
     """ Called before the Flask request is processed
@@ -71,17 +88,24 @@ def _before_request():
     ``g.canvas_user`` to the dict that Facebook POSTs us in the canvas
     request through the ``signed_request`` param.
     """
-    if 'signed_request' not in frequest.form:
+
+    try:
+        if not app.view_functions[flask_request.endpoint]._canvas:
+            return
+    except (KeyError, AttributeError):
+        # either we're handling a non-view request (i.e. static files, or the
+        # view function hasn't been registered as a canvas endpoint
+        return
+
+    if 'signed_request' not in flask_request.form:
         app.logger.error('signed_request not in request.form')
         abort(403)
 
-    encoded_sig, encoded_data = frequest.form['signed_request'].split('.')
-    decoded_sig = _decode(encoded_sig)
-    decoded_data = loads(_decode(encoded_data))
-
-    if decoded_sig != hmac.new(app.config['CANVAS_CLIENT_SECRET'], 
-        encoded_data, sha256).digest():
-        app.logger.error('sig doesn\'t match hash')
+    try:
+        decoded_sig, decoded_data = _decode_signed_user(
+            flask_request.form['signed_request'].split('.'))
+    except ValueError as e:
+        app.logger.error(e.message)
         abort(403)
 
     if 'oauth_token' not in decoded_data:
@@ -92,6 +116,7 @@ def _before_request():
     if not app.config.get('CANVAS_SKIP_AUTH_CHECK',
         False) and not _has_authorized(app):
         app.logger.info(
-            'user does not have the required permission set. redirecing.')
+            'user does not have the required permission set. redirecting.')
         return _authorize()
+
     app.logger.info('all required permissions have been granted')

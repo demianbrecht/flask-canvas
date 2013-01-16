@@ -9,7 +9,7 @@ try:
 except:
     from json import dumps
 
-import flask_canvas
+from flask_canvas import canvas_endpoint, install, request
 
 app = Flask('canvas_example')
 app.config.update({
@@ -19,13 +19,18 @@ app.config.update({
     'CANVAS_REDIRECT_URI': 'https://apps.facebook.com/flask_canvas',
     'CANVAS_SCOPE': 'email',
 })
-flask_canvas.install(app)
+install(app)
 
+@app.route('/', methods=['GET'])
+def home():
+    return 'hallo'
+
+@canvas_endpoint
 @app.route('/canvas/', methods=['POST'])
 def canvas():
     return '<p>%s</p><p>%s</p>' % (
         dumps(g.canvas_user),
-        dumps(flask_canvas.request('/me')))
+        dumps(request('/me')))
 
 if __name__ == '__main__':
     app.run()
