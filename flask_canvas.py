@@ -8,7 +8,7 @@ try:
     from simplejson import loads
 except ImportError:
     from json import loads
-from urllib2 import urlopen
+from urllib2 import urlopen, Request
 
 from flask import abort, current_app as app, g, request as flask_request
 
@@ -19,16 +19,21 @@ def install(app): # pylint: disable=W0621
     """
     app.before_request(_before_request)
 
-def request(path, data=None):
+def request(path, data=None, method='GET'):
     """ Convenience Facebook request function. 
 
     Utility function to request resources via the graph API, with the
     format expected by Facebook.
     """
-    return loads(urlopen('%s%s?access_token=%s' % (
+    url = '%s%s?access_token=%s' % (
         'https://graph.facebook.com',
         path,
-        g.canvas_user['oauth_token'])).read(), data)
+        g.canvas_user['oauth_token'])
+
+    req = Request(url, data=data)
+    req.get_method = lambda: method
+
+    return loads(urlopen(req).read())
 
 def canvas_route(view_fn):
     """ Decorator for canvas route 
