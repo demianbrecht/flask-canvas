@@ -1,3 +1,5 @@
 A Flask extension for Facebook canvas-based apps.
 
 Documentation available at https://flask-canvas.readthedocs.org/en/latest/.
+
+TODO: Full unit test coverage
