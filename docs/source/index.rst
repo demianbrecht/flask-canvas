@@ -38,11 +38,13 @@ Usage
     def user(canvas_user):
         return canvas_user.request('/me')
 
-.. note:: The user data parameter ``must`` be named ``canvas_user``.
-          If a parameter with that name exists, the user data will be passed to
-          it. Otherwise, it is ignored. Meaning that you can still have canvas
-          views that don't receive user data (or incur overhead of parsing the
-          ``signed_request`` payload.
+.. note:: 
+   
+   The user data parameter ``must`` be named ``canvas_user``.
+   If a parameter with that name exists, the user data will be passed to
+   it. Otherwise, it is ignored. Meaning that you can still have canvas
+   views that don't receive user data (or incur overhead of parsing the
+   ``signed_request`` payload.
 
 
 Configuration
