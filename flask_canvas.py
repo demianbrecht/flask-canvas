@@ -17,6 +17,8 @@ from flask import (Flask, abort, current_app as app, request as flask_request,
 _ARG_KEY = 'canvas_user'
 
 def install(app):
+    """ Installs the Flask extension
+    """
     Flask.canvas_route = _canvas_route
     app.logger.info('monkey patching complete')
 
