@@ -65,6 +65,13 @@ The following app configuration values may be set:
   potentially updated list.
 
 
+Running the example
+-------------------
+
+To run the example project, simply run ``make example`` and direct your browser
+to https://apps.facebook.com/flask_canvas.
+
+
 API
 ---
 .. automodule:: flask_canvas

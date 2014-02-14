@@ -14,13 +14,16 @@ from urllib2 import urlopen, Request
 from flask import (Flask, abort, current_app as app, request as flask_request,
     redirect)
 
+
 _ARG_KEY = 'canvas_user'
+
 
 def install(app):
     """ Installs the Flask extension
     """
     Flask.canvas_route = _canvas_route
     app.logger.info('monkey patching complete')
+
 
 class User(dict):
     def request(self, path, data=None, method='GET'):
@@ -48,6 +51,7 @@ class User(dict):
         perms = self.request('/me/permissions')['data'][0].keys()
         return all(k in perms for k in app.config[
             'CANVAS_SCOPE'].split(','))
+
 
 def _canvas_route(self, *args, **kwargs):
     """ Decorator for canvas route 
@@ -97,11 +101,13 @@ def _canvas_route(self, *args, **kwargs):
         return inner
     return outer
 
+
 def _decode(data):
     """ Decodes the Facebook signed_request parts
     """
     data += "=" * (len(data) % 4)
     return b64decode(data.encode('utf-8'))
+
 
 def _authorize():
     """ Redirect the user to Facebook's authorization page
@@ -122,6 +128,7 @@ def _authorize():
     </html>""" % (app.config['CANVAS_CLIENT_ID'], 
         app.config['CANVAS_REDIRECT_URI'], 
         app.config['CANVAS_SCOPE'],)
+
 
 def _decode_signed_user(encoded_sig, encoded_data):
     """ Decodes the ``POST``ed signed data
