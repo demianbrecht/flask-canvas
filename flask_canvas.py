@@ -48,8 +48,9 @@ class User(dict):
         Checks the current user permission set against the one being requested
         by the application.
         """
-        perms = self.request('/me/permissions')['data'][0].keys()
-        return all(k in perms for k in app.config[
+        perm_data = self.request('/me/permissions')['data']
+        granted_perms = [perm['permission'] for perm in perm_data if perm['status'] == 'granted']
+        return all(k in granted_perms for k in app.config[
             'CANVAS_SCOPE'].split(','))
 
 
