@@ -7,7 +7,7 @@ blinker==1.2
 coverage==3.6
 docutils==0.10
 logilab-astng==0.24.1
-logilab-common==0.58.3
+logilab-common==0.61.0
 nose==1.2.1
 pylint==0.26.0
 wsgiref==0.1.2
